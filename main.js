@@ -147,6 +147,8 @@ function convert(d, resolve, reject) {
         settings.target_bitrate + "k",
         "-acodec",
         "libfdk_aac",
+        "-ar",
+        "44100",
         settings.target_directory + path_dir + "/" + filename
       ]);
       exec(command, function(err, stdout) {
