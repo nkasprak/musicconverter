@@ -1,0 +1,7 @@
+{
+  "source_directory": "$HOME/Music",
+  "target_directory": "$HOME/Downsampled",
+  "convert_bitrate_threshold":"257",
+  "target_bitrate":"192",
+  "max_concurrent":8
+}
