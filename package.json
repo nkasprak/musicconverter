@@ -17,12 +17,15 @@
     "gulp-uglify": "^2.1.2",
     "gulp-util": "^3.0.8",
     "gulp-watch": "^4.3.11",
+    "iso-8859-2": "^1.0.0",
     "shell-escape": "^0.2.0",
     "shelljs": "^0.8.1",
     "text-encoding": "^0.6.4",
     "vinyl-buffer": "^1.0.0",
     "vinyl-source-stream": "^1.1.0",
-    "watchify": "^3.9.0"
+    "watchify": "^3.9.0",
+    "windows-1252": "^1.0.0",
+    "xml2js": "^0.4.19"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",

@@ -4,6 +4,7 @@ var fs = require('fs');
 var path = require('path');
 var ffmpeg = require("fluent-ffmpeg");
 var shell_escape = require("shell-escape");
+var windows1252 = require("windows-1252");
 var walk = function(dir, done) {
   var results = [];
   fs.readdir(dir, function(err, list) {
@@ -101,15 +102,16 @@ function copy(d, resolve, reject) {
   var path = d.data.format.filename.replace(settings.source_directory,"");
   var path_arr = path.split("/");
   path_arr.splice(-1);
-  var path_dir = path_arr.join("/");
+  var path_dir = windows1252.decode(windows1252.encode(path_arr.join("/"), {mode:"html"}));
   mkDirByPathSync(settings.target_directory + path_dir);
   var dest = settings.target_directory + path;
+  dest = windows1252.decode(windows1252.encode(dest,{mode:"html"}));
   if (fs.existsSync(dest)) {
     resolve(d.jobID);
   } else {
     console.log("Copy " + d.data.format.filename);
     fs.readFile(d.data.format.filename, function(err, data) {
-      fs.writeFile(settings.target_directory + path, data, function(err) {
+      fs.writeFile(dest, data, function(err) {
         if (err) {
           console.log(err);
         }
@@ -127,8 +129,10 @@ function convert(d, resolve, reject) {
   filename.splice(-1);
   filename = filename.join(".") + ".m4a";
   var path_dir = path_arr.join("/");
+  path_dir = windows1252.decode(windows1252.encode(path_arr.join("/"), {mode:"html"}));
   mkDirByPathSync(settings.target_directory + path_dir);
   var dest = settings.target_directory + path_dir + "/" + filename;
+  dest = windows1252.decode(windows1252.encode(dest,{mode:"html"}));
   if (fs.existsSync(dest)) {
     resolve(d.jobID);
   } else {
@@ -149,7 +153,7 @@ function convert(d, resolve, reject) {
         "libfdk_aac",
         "-ar",
         "44100",
-        settings.target_directory + path_dir + "/" + filename
+        dest
       ]);
       exec(command, function(err, stdout) {
         if (err) {
@@ -185,6 +189,7 @@ function startNewJob() {
       dest = dest.split(".");
       dest.splice(-1);
       dest = dest.join(".");
+      dest = windows1252.decode(windows1252.encode(dest,{mode:"html"}));
       if (!(fs.existsSync(dest + ".mp3") || fs.existsSync(dest + ".m4a") || file.indexOf(".DS_Store")!==-1)) {
         try {
           jobs[i] = getInfo(file, i).then(convertOrCopy).then(finished);
@@ -203,6 +208,20 @@ function startNewJob() {
 
 walk(settings.source_directory, function(err, results) {
   fileList = results;
+
+/*  fileList.forEach(function(f, i) {
+    try {
+      windows1252.encode(f);
+    } catch (ex) {
+      var dest = f.replace(settings.source_directory,settings.target_directory);
+      try {
+        fs.unlinkSync(dest);
+      } catch (ex) {
+        console.log(ex);
+      }
+    }
+  });
+  return;*/
   startNewJob();
 });
-//process.stdin.resume();
+process.stdin.resume();
