@@ -65,7 +65,6 @@ var convertOrCopy = function(d) {
       resolve(d.jobID);
     }
     if (settings.output_flac) {
-      console.log(d);
       if (d.data.streams[0].codec_name==="alac") {
         convert(d, resolve, reject);
       } else {
@@ -146,7 +145,7 @@ function convert(d, resolve, reject) {
   mkDirByPathSync(settings.target_directory + path_dir);
   var dest = settings.target_directory + path_dir + "/" + filename;
   dest = windows1252.decode(windows1252.encode(dest,{mode:"html"}));
-  var codec = "libfdk_aac";
+  var codec = "aac";
   if (settings.output_flac) {
     codec = "flac";
   }
@@ -172,6 +171,7 @@ function convert(d, resolve, reject) {
         "44100",
         dest
       ]);
+      console.log(command);
       exec(command, function(err, stdout) {
         if (err) {
           console.log(err);

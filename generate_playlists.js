@@ -22,6 +22,7 @@ function lookupPath(d) {
 
 parseXML(xml, function(err, result) {
   var playlists = result.plist.dict[0].array[0].dict;
+  console.log(playlists);
   var itunes_root = settings.itunes_root;
   var obj = [];
   var max = 1000;
@@ -50,6 +51,7 @@ parseXML(xml, function(err, result) {
           }
           path = path.replace(itunes_root,"");
           path = windows1252.encode(path, {mode:"html"});
+          console.log(path);
           r.entries.push(path);
         } catch (ex) {}
       });
@@ -68,6 +70,7 @@ parseXML(xml, function(err, result) {
     });
     console.log(d.name);
     var binary = windows1252.encode(file,{mode:'html'});
+    console.log(d.name);
     fs.writeFileSync("playlists/"+d.name+".m3u",file,{encoding:"binary"});
   });
 });
