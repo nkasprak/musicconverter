@@ -71,6 +71,9 @@ parseXML(xml, function(err, result) {
     console.log(d.name);
     var binary = windows1252.encode(file,{mode:'html'});
     console.log(d.name);
+    if (settings.uri_encode_filename) {
+      d.name = encodeURIComponent(d.name);
+    }
     fs.writeFileSync("playlists/"+d.name+".m3u",file,{encoding:"binary"});
   });
 });
