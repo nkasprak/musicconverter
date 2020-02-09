@@ -66,7 +66,11 @@ var convertOrCopy = function(d) {
     }
     if (settings.output_flac) {
       if (d.data.streams[0].codec_name==="alac") {
-        convert(d, resolve, reject);
+        if (d.data.format.bit_rate/1000 < settings.convert_bitrate_threshold*1) {
+          convert(d, false, resolve, reject);
+        } else {
+          convert(d, true, resolve, reject);
+        }
       } else {
         copy(d, resolve, reject);
       }
@@ -74,7 +78,7 @@ var convertOrCopy = function(d) {
       if (d.data.format.bit_rate/1000 < settings.convert_bitrate_threshold*1) {
         copy(d, resolve, reject);
       } else {
-        convert(d, resolve, reject);
+        convert(d, true, resolve, reject);
       }
     }
   });
@@ -129,13 +133,13 @@ function copy(d, resolve, reject) {
   }
 }
 
-function convert(d, resolve, reject) {
+function convert(d, force_lossy, resolve, reject) {
   var path = d.data.format.filename.replace(settings.source_directory,"");
   var path_arr = path.split("/");
   var filename = path_arr.splice(-1)[0];
   filename = filename.split(".");
   filename.splice(-1);
-  if (settings.output_flac) {
+  if (settings.output_flac && !force_lossy) {
     filename = filename.join(".") + ".flac";
   } else {
     filename = filename.join(".") + ".m4a";
@@ -146,7 +150,7 @@ function convert(d, resolve, reject) {
   var dest = settings.target_directory + path_dir + "/" + filename;
   dest = windows1252.decode(windows1252.encode(dest,{mode:"html"}));
   var codec = "libfdk_aac";
-  if (settings.output_flac) {
+  if (settings.output_flac && !force_lossy) {
     codec = "flac";
   }
   if (settings.output_alac) {

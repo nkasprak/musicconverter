@@ -61,7 +61,7 @@ parseXML(xml, function(err, result) {
             var orgExt = noExt.splice(-1);
             noExt = noExt.join(".");
             var toCheck = target_dir + "/" + noExt;
-            var exts = orgExt.concat(["mp3","m4a","mp4"]);
+            var exts = orgExt.concat(["mp3","m4a","mp4","flac"]);
             exts.forEach(function(ext) {
               if (found) {return;}
               var testPath = toCheck + "." + ext;
