@@ -24,6 +24,7 @@ parseXML(xml, function(err, result) {
   var playlists = result.plist.dict[0].array[0].dict;
   console.log(playlists);
   var itunes_root = settings.itunes_root;
+  var target_dir = settings.target_directory;
   var obj = [];
   var max = 1000;
   var tracks = result.plist.dict[0].dict[0];
@@ -50,9 +51,32 @@ parseXML(xml, function(err, result) {
             return;
           }
           path = path.replace(itunes_root,"");
+          var orgpath = path;
+          var found = false;
           path = windows1252.encode(path, {mode:"html"});
-          console.log(path);
-          r.entries.push(path);
+          var paths = [orgpath, path];
+          paths.forEach(function(path) {
+            if (found) {return;}
+            var noExt = path.split(".");
+            var orgExt = noExt.splice(-1);
+            noExt = noExt.join(".");
+            var toCheck = target_dir + "/" + noExt;
+            var exts = orgExt.concat(["mp3","m4a","mp4"]);
+            exts.forEach(function(ext) {
+              if (found) {return;}
+              var testPath = toCheck + "." + ext;
+              if (fs.existsSync(testPath)) {
+                //console.log(testPath);
+                found = true;
+                r.entries.push(testPath.replace(target_dir + "/",""));
+              } /*else {
+                console.log("not found: " + testPath);
+              }*/
+            });
+          });
+          if (!found) {
+            console.log("not found: " + path);
+          }
         } catch (ex) {}
       });
       obj.push(r);
@@ -68,9 +92,9 @@ parseXML(xml, function(err, result) {
     d.entries.forEach(function(d) {
       file += (d + "\n");
     });
-    console.log(d.name);
+    //console.log(d.name);
     var binary = windows1252.encode(file,{mode:'html'});
-    console.log(d.name);
+    //console.log(d.name);
     fs.writeFileSync("playlists/"+d.name+".m3u",file,{encoding:"binary"});
   });
 });

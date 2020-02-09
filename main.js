@@ -145,9 +145,12 @@ function convert(d, resolve, reject) {
   mkDirByPathSync(settings.target_directory + path_dir);
   var dest = settings.target_directory + path_dir + "/" + filename;
   dest = windows1252.decode(windows1252.encode(dest,{mode:"html"}));
-  var codec = "aac";
+  var codec = "libfdk_aac";
   if (settings.output_flac) {
     codec = "flac";
+  }
+  if (settings.output_alac) {
+    codec = "alac";
   }
   if (fs.existsSync(dest)) {
     resolve(d.jobID);
@@ -163,6 +166,8 @@ function convert(d, resolve, reject) {
         "-ac",
         "2",
         "-vn",
+        //"-sample_fmt",
+        //"s32p",
         "-ab",
         settings.target_bitrate + "k",
         "-acodec",
