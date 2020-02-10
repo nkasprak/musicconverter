@@ -7,6 +7,7 @@ var shell_escape = require("shell-escape");
 var settings = require("./settings.json");
 var parseXML = require("xml2js").parseString;
 var xml =fs.readFileSync(settings.itunes_xml, "utf-8");
+
 var windows1252 = require("windows-1252");
 
 var settings = require("./settings.json");
@@ -21,8 +22,8 @@ function lookupPath(d) {
 }
 
 parseXML(xml, function(err, result) {
+  console.log(result);
   var playlists = result.plist.dict[0].array[0].dict;
-  console.log(playlists);
   var itunes_root = settings.itunes_root;
   var target_dir = settings.target_directory;
   var obj = [];
@@ -33,20 +34,28 @@ parseXML(xml, function(err, result) {
     var ind = 0;
     trackIndex[d.integer[0]] = d.string[d.string.length-1];
   });
-  playlists.forEach(function(d) {
+  var nplaylists = playlists.length;
+  playlists.forEach(function(d, i) {
     try {
+      
       if (obj.length>max) {
         return;
       }
+      console.log(i, nplaylists);
       var r = {};
       r.name = d.string[1].replace(/\:/g,"-");
       r.name = r.name.replace(/\//g," ");
       //console.log(r.name);
       r.entries = [];
-      d.array[0].dict.forEach(function(d) {
+      var length = d.array[0].dict.length;
+      if (length > max) {return;}
+      d.array[0].dict.forEach(function(d, i) {
         try {
+          
+          //if (i%100 === 0) {console.log(i, length);}
           var path = trackIndex[d.integer];
           path = decodeURIComponent(path);
+          path = path.replace("file://localhost/D:/","/mnt/d/");
           if (path.indexOf(itunes_root)===-1) {
             return;
           }
