@@ -16,7 +16,8 @@ var fs = require('fs');
 var path = require('path');
 var ffmpeg = require("fluent-ffmpeg");
 var shell_escape = require("shell-escape");
-
+var glob = require("glob");
+var glob_escape = require("glob-escape");
 function lookupPath(d) {
 
 }
@@ -66,11 +67,20 @@ parseXML(xml, function(err, result) {
           var paths = [orgpath, path];
           paths.forEach(function(path) {
             if (found) {return;}
+            path = path.replace(/[^\x00-\x7F]/g, "");
             var noExt = path.split(".");
             var orgExt = noExt.splice(-1);
             noExt = noExt.join(".");
-            var toCheck = target_dir + "/" + noExt;
+            noExt = noExt.split("/");
+            noExt[noExt.length - 1] = "*" + glob_escape(noExt[noExt.length - 1]) + "*";
+            noExt = noExt.join("/");
+            var toCheck = glob_escape(target_dir) + "/" + noExt;
             var exts = orgExt.concat(["mp3","m4a","mp4","flac"]);
+            var files = glob.sync(toCheck);
+            if (files.length) {
+              r.entries.push(files[0].replace(target_dir + "/",""));
+            }
+            return;
             exts.forEach(function(ext) {
               if (found) {return;}
               var testPath = toCheck + "." + ext;
@@ -84,7 +94,7 @@ parseXML(xml, function(err, result) {
             });
           });
           if (!found) {
-            console.log("not found: " + path);
+            //console.log("not found: " + path);
           }
         } catch (ex) {}
       });
