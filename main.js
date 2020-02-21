@@ -43,7 +43,7 @@ var getInfo = function(file, jobID) {
     try {
       var file_arr = file.split(".");
       var ext = file_arr[file_arr.length-1];
-      if (ext!=="m4a" && ext!=="mp3" && ext!=="flac" && ext!=="mp4") {
+      if (ext!=="m4a" && ext!=="mp3" && ext!=="flac" && ext!=="mp4" && ext!=="m4p") {
         //console.log("not a music file: " + file);
         resolve({data:null,jobID:jobID});
         return;
@@ -148,6 +148,36 @@ function mkDirByPathSync(targetDir, {isRelativeToScript = false} = {}) {
   }, initDir);
 }
 
+function get_bitrate(file) {
+  return new Promise(function(resolve, reject) {
+    var command = shell_escape([
+      "ffprobe",
+      "-v",
+      "quiet",
+      "-print_format",
+      "json",
+      "-select_streams",
+      "a:0",
+      "-show_entries",
+      "stream=bit_rate",
+      file
+    ]);
+    console.log(command);
+    exec(command, function(err, out) {
+      if (err) {
+        console.log("bad command: " + command);
+        resolve(null);
+        return;
+      } else {
+        var d = JSON.parse(out);
+        console.log(d);
+        resolve(d.streams[0].bit_rate);
+        return;
+      }
+    });
+  });
+}
+
 function copy(d, new_metadata, resolve, reject) {
   if (d.data===null) {
     resolve(d.jobID);
@@ -156,13 +186,15 @@ function copy(d, new_metadata, resolve, reject) {
   var path = d.data.format.dest_filename;
   var path_arr = path.split("/");
   var filename = path_arr.splice(-1)[0];
+  var ext = filename.split(".");
+  ext = ext[ext.length-1];
   path = path_arr.join("/");
-  /*if (new_metadata.TRACKNUMBER) {
+  if (new_metadata.TRACKNUMBER) {
     filename = left_pad(new_metadata.TRACKNUMBER,2) + filename;
   }
   if (new_metadata.DISCNUMBER) {
     filename = left_pad(new_metadata.DISCNUMBER,2) + filename;
-  }*/
+  }
   path = path + "/" + filename;
   
   var tmp = settings.target_directory + "/" + uuid(filename, uuid_namespace);
@@ -171,14 +203,39 @@ function copy(d, new_metadata, resolve, reject) {
   var dest = settings.target_directory + path;
   dest = windows1252.decode(windows1252.encode(dest,{mode:"html"}));
   dest_file_list[dest] = true;
+  var exists_at_dest = false;
   if (fs.existsSync(dest)) {
-    resolve(d.jobID);
+    exists_at_dest = true;
+    if (ext==="flac") {
+      resolve(d.jobID);
+      return;
+    }
+    get_bitrate(dest).then(function(br) {
+      if (!br) {
+        resolve(d.jobID);
+        return;
+      } else if (br >= 0.9*settings.target_bitrate*1000) {
+        console.log("existing bitrate is fine");
+        resolve(d.jobID);
+      } else {
+        console.log("existing bitrate too low, proceeding");
+        finish();
+      }
+    });
   } else {
+    finish();
+  }
+  function finish() {
     console.log("Copy " + d.data.format.filename);
     fs.readFile(d.data.format.filename, function(err, data) {
+      console.log(err);
       fs.writeFile(tmp, data, function(err) {
+        console.log(tmp);
         if (err) {
           console.log(err);
+        }
+        if (exists_at_dest) {
+          fs.unlinkSync(dest);
         }
         fs.rename(tmp, dest, function() {
           resolve(d.jobID);
@@ -186,6 +243,7 @@ function copy(d, new_metadata, resolve, reject) {
       });
     });
   }
+  
 }
 
 function left_pad(n, zeroes) {
@@ -228,9 +286,29 @@ function convert(d, new_metadata, force_lossy, resolve, reject) {
   if (settings.output_alac && !force_lossy) {
     codec = "alac";
   }
+
+  var exists_at_dest = false;
   if (fs.existsSync(dest)) {
-    resolve(d.jobID);
+    exists_at_dest = true;
+    if (ext==="flac") {
+      resolve(d.jobID);
+      return;
+    }
+    get_bitrate(dest).then(function(br) {
+      if (!br) {
+        resolve(d.jobID);
+      } else if (br >= 0.9*settings.target_bitrate*1000) {
+        console.log("existing bitrate is fine");
+        resolve(d.jobID);
+      } else {
+        console.log("existing bitrate too low, proceeding");
+        finish();
+      }
+    });
   } else {
+    finish();
+  }
+  var finish = function() {
     var tmp = settings.target_directory + "/" + uuid(filename, uuid_namespace) + ext;
     try {
       console.log("Converting " + d.data.format.filename);
@@ -263,6 +341,9 @@ function convert(d, new_metadata, force_lossy, resolve, reject) {
         if (err) {
           console.log(err);
         }
+        if (exists_at_dest) {
+          fs.unlinkSync(dest);
+        }
         fs.rename(tmp, dest, function() {
           resolve(d.jobID);
         });
@@ -272,6 +353,7 @@ function convert(d, new_metadata, force_lossy, resolve, reject) {
       resolve(d.jobID);
     }
   }
+  
 }
 
 function finished(result) {

@@ -78,7 +78,9 @@ parseXML(xml, function(err, result) {
             var exts = orgExt.concat(["mp3","m4a","mp4","flac"]);
             var files = glob.sync(toCheck);
             if (files.length) {
-              r.entries.push(files[0].replace(target_dir + "/",""));
+              var f = files[0].replace(target_dir + "/","");
+              r.entries.push(f);
+              found = true;
             }
             return;
             exts.forEach(function(ext) {
