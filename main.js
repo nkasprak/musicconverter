@@ -89,7 +89,9 @@ var convertOrCopy = function(d) {
       tags = d.data.format.tags;
     }
     d.data.format.dest_filename = d.data.format.filename.replace(settings.source_directory,"");
-    d.data.format.dest_filename = d.data.format.dest_filename.replace(/[^\x00-\x7F]/g, "");
+    if (!settings.filter_low_bitrate_mode) {
+      d.data.format.dest_filename = d.data.format.dest_filename.replace(/[^\x00-\x7F]/g, "");
+    }
     var new_metadata = {};
     if (tags.track) {
       var track = tags.track.split("/");
@@ -104,6 +106,14 @@ var convertOrCopy = function(d) {
       if (disc.length > 1) {
         new_metadata.TOTALDISCS = disc[1];
       }
+    }
+    if (settings.filter_low_bitrate_mode) {
+      if (d.data.streams[0].codec_name==="alac") {
+        copy(d, {}, resolve, reject);
+      } else {
+        resolve(d.jobID);
+      }
+      return;
     }
     if (settings.output_flac) {
       if (d.data.streams[0].codec_name==="alac") {
@@ -187,7 +197,7 @@ function copy(d, new_metadata, resolve, reject) {
   var path_arr = path.split("/");
   var filename = path_arr.splice(-1)[0];
   var ext = filename.split(".");
-  ext = ext[ext.length-1];
+  ext = "." + ext[ext.length-1];
   path = path_arr.join("/");
   if (new_metadata.TRACKNUMBER) {
     filename = left_pad(new_metadata.TRACKNUMBER,2) + filename;
@@ -198,15 +208,22 @@ function copy(d, new_metadata, resolve, reject) {
   path = path + "/" + filename;
   
   var tmp = settings.target_directory + "/" + uuid(filename, uuid_namespace);
-  var path_dir = windows1252.decode(windows1252.encode(path_arr.join("/"), {mode:"html"}));
+  var path_dir;
+  if (!settings.filter_low_bitrate_mode) {
+    path_dir = windows1252.decode(windows1252.encode(path_arr.join("/"), {mode:"html"}));
+  } else {
+    path_dir = path_arr.join("/");
+  }
   mkDirByPathSync(settings.target_directory + path_dir);
-  var dest = settings.target_directory + path;
-  dest = windows1252.decode(windows1252.encode(dest,{mode:"html"}));
+  var dest = settings.target_directory + path; 
+  if (!settings.filter_low_bitrate_mode) {
+    dest = windows1252.decode(windows1252.encode(dest,{mode:"html"}));
+  }
   dest_file_list[dest] = true;
   var exists_at_dest = false;
   if (fs.existsSync(dest)) {
     exists_at_dest = true;
-    if (ext==="flac") {
+    if (ext===".flac") {
       resolve(d.jobID);
       return;
     }
@@ -214,13 +231,17 @@ function copy(d, new_metadata, resolve, reject) {
       if (!br) {
         resolve(d.jobID);
         return;
-      } else if (br >= 0.9*settings.target_bitrate*1000) {
-        console.log("existing bitrate is fine");
-        resolve(d.jobID);
-      } else {
-        console.log("existing bitrate too low, proceeding");
-        finish();
       }
+      get_bitrate(d.data.format.filename).then(function(source_br) {
+        if (br >= 0.9*settings.target_bitrate*1000  || br >= source_br) {
+          console.log("existing bitrate is fine");
+          resolve(d.jobID);
+        } else {
+          console.log("existing bitrate too low, proceeding");
+          finish();
+        }
+      });
+      
     });
   } else {
     finish();
@@ -290,7 +311,7 @@ function convert(d, new_metadata, force_lossy, resolve, reject) {
   var exists_at_dest = false;
   if (fs.existsSync(dest)) {
     exists_at_dest = true;
-    if (ext==="flac") {
+    if (ext===".flac") {
       resolve(d.jobID);
       return;
     }
@@ -308,7 +329,7 @@ function convert(d, new_metadata, force_lossy, resolve, reject) {
   } else {
     finish();
   }
-  var finish = function() {
+  function finish() {
     var tmp = settings.target_directory + "/" + uuid(filename, uuid_namespace) + ext;
     try {
       console.log("Converting " + d.data.format.filename);
