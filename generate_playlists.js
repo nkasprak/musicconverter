@@ -52,11 +52,11 @@ parseXML(xml, function(err, result) {
       if (length > max) {return;}
       d.array[0].dict.forEach(function(d, i) {
         try {
-          
           //if (i%100 === 0) {console.log(i, length);}
           var path = trackIndex[d.integer];
           path = decodeURIComponent(path);
           path = path.replace("file://localhost/D:/","/mnt/d/");
+          console.log(path, itunes_root);
           if (path.indexOf(itunes_root)===-1) {
             return;
           }

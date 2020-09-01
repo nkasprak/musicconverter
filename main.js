@@ -441,6 +441,7 @@ function startNewJob() {
 }
 
 walk(settings.source_directory, function(err, results) {
+  console.log(err);
   fileList = results;
 
 /*  fileList.forEach(function(f, i) {
