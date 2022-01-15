@@ -21,7 +21,7 @@
     "gulp-watch": "^4.3.11",
     "iso-8859-2": "^1.0.0",
     "shell-escape": "^0.2.0",
-    "shelljs": "^0.8.1",
+    "shelljs": "^0.8.5",
     "text-encoding": "^0.6.4",
     "uuid": "^3.4.0",
     "vinyl-buffer": "^1.0.0",
