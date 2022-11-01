@@ -11,7 +11,7 @@
     "fs": "0.0.1-security",
     "glob": "^7.1.6",
     "glob-escape": "0.0.2",
-    "gulp": "^3.9.1",
+    "gulp": "^4.0.2",
     "gulp-concat": "^2.6.1",
     "gulp-git": "^2.5.2",
     "gulp-notify": "^3.0.0",
