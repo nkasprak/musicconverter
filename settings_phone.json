@@ -1,10 +1,11 @@
 {
   "source_directory": "/mnt/d/iTunes/Music",
-  "target_directory": "/mnt/g/Music",
-  "convert_bitrate_threshold":"9999",
-  "target_bitrate":"192",
+  "target_directory": "/mnt/e/Phone Music Library",
+  "convert_bitrate_threshold":"321",
+  "target_bitrate":"256",
   "max_concurrent":20,
-  "output_flac":true,
+  "output_flac":false,
   "itunes_xml":"/mnt/c/Users/Nicholas Kasprak/Music/iTunes/iTunes Music Library.xml",
-  "itunes_root":"/mnt/d/iTunes/Music"
+  "itunes_root":"/mnt/d/iTunes/Music",
+  "date_cutoff":"2022-03-03"
 }

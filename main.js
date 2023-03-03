@@ -3,9 +3,11 @@ var exec = require('child_process').exec;
 var fs = require('fs');
 var path = require('path');
 var ffmpeg = require("fluent-ffmpeg");
+var date_cutoff = new Date(settings.date_cutoff).getTime() || 0;
 var shell_escape = require("shell-escape");
 var windows1252 = require("windows-1252");
 var uuid = require('uuid/v5');
+const { date } = require("gulp-util");
 var uuid_namespace = require('uuid/v1')();
 var dest_file_list = {};
 var deleteUnmanaged = false;
@@ -29,7 +31,11 @@ var walk = function(dir, done) {
             if (!--pending) done(null, results);
           });
         } else {
-          results.push(file);
+          var mtime = new Date(stat.mtime).getTime();
+          var ctime = new Date(stat.ctime).getTime();
+          if (Math.max(mtime, ctime) > date_cutoff) {
+            results.push(file);
+          }
           if (!--pending) done(null, results);
         }
       });
@@ -61,6 +67,7 @@ var getInfo = function(file, jobID) {
       exec(command, function(err, out) {
         if (err) {
           console.log("bad command: " + command);
+          console.log(err);
           resolve({data:null,jobID:jobID});
           return;
         } else {
@@ -250,18 +257,25 @@ function copy(d, new_metadata, resolve, reject) {
     console.log("Copy " + d.data.format.filename);
     fs.readFile(d.data.format.filename, function(err, data) {
       console.log(err);
-      fs.writeFile(tmp, data, function(err) {
-        console.log(tmp);
-        if (err) {
-          console.log(err);
-        }
-        if (exists_at_dest) {
-          fs.unlinkSync(dest);
-        }
-        fs.rename(tmp, dest, function() {
-          resolve(d.jobID);
+      fs.stat(d.data.format.filename, function(err, stats) {
+        console.log(err);
+        fs.writeFile(tmp, data, function(err) {
+          console.log(tmp);
+          if (err) {
+            console.log(err);
+          }
+          if (exists_at_dest) {
+            fs.unlinkSync(dest);
+          }
+          fs.rename(tmp, dest, function() {
+            fs.utimes(dest, stats.atime, stats.mtime, function(err) {
+              console.log(err);
+              resolve(d.jobID);
+            });
+          });
         });
       });
+      
     });
   }
   
@@ -277,7 +291,6 @@ function left_pad(n, zeroes) {
 
 function convert(d, new_metadata, force_lossy, resolve, reject) {
   var path = d.data.format.dest_filename;
- 
   var path_arr = path.split("/");
   var filename = path_arr.splice(-1)[0];
   filename = filename.split(".");
@@ -333,40 +346,47 @@ function convert(d, new_metadata, force_lossy, resolve, reject) {
     var tmp = settings.target_directory + "/" + uuid(filename, uuid_namespace) + ext;
     try {
       console.log("Converting " + d.data.format.filename);
-      var cmd_arr = [
-        "ffmpeg",
-        "-i",
-        d.data.format.filename,
-        "-strict",
-        "-2",
-        "-ac",
-        "2",
-        "-vn",
-        "-ab",
-        settings.target_bitrate + "k",
-        "-acodec",
-        codec,
-        "-ar",
-        "44100"
-      ];
-      if (new_metadata) {
-        Object.keys(new_metadata).forEach((key)=> {
-          cmd_arr.push("-metadata");
-          cmd_arr.push(key + "=" + new_metadata[key]);
-        });
-      }
-      cmd_arr.push(tmp);
-      var command = shell_escape(cmd_arr);
-      console.log(command);
-      exec(command, function(err, stdout) {
-        if (err) {
-          console.log(err);
+      
+      fs.stat(d.data.format.filename, function(err, stats) {
+        console.log(err);
+        var cmd_arr = [
+          "ffmpeg",
+          "-i",
+          d.data.format.filename,
+          "-strict",
+          "-2",
+          "-ac",
+          "2",
+          "-vn",
+          "-ab",
+          settings.target_bitrate + "k",
+          "-acodec",
+          codec,
+          "-ar",
+          "44100"
+        ];
+        if (new_metadata) {
+          Object.keys(new_metadata).forEach((key)=> {
+            cmd_arr.push("-metadata");
+            cmd_arr.push(key + "=" + new_metadata[key]);
+          });
         }
-        if (exists_at_dest) {
-          fs.unlinkSync(dest);
-        }
-        fs.rename(tmp, dest, function() {
-          resolve(d.jobID);
+        cmd_arr.push(tmp);
+        var command = shell_escape(cmd_arr);
+        console.log(command);
+        exec(command, function(err, stdout) {
+          if (err) {
+            console.log(err);
+          }
+          if (exists_at_dest) {
+            fs.unlinkSync(dest);
+          }
+          fs.rename(tmp, dest, function() {
+            fs.utimes(dest, stats.atime, stats.mtime, function(err) {
+              console.log(err);
+              resolve(d.jobID);
+            });
+          });
         });
       });
     } catch (ex) {

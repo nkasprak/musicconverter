@@ -1,0 +1,10 @@
+{
+  "source_directory": "/mnt/c/Users/Nicholas Kasprak/mahler",
+  "target_directory": "/mnt/c/Users/Nicholas Kasprak/mahler_alac",
+  "convert_bitrate_threshold":"321",
+  "target_bitrate":"256",
+  "max_concurrent":4,
+  "output_flac":true,
+  "itunes_xml":"/mnt/c/Users/Nicholas Kasprak/Music/iTunes/iTunes Music Library.xml",
+  "itunes_root":"/mnt/d/iTunes/Music"
+}
