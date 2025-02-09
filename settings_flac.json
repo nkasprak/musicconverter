@@ -1,0 +1,12 @@
+{
+  "source_directory": "/mnt/d/iTunes/Music",
+  "target_directory": "/mnt/e/flac_library",
+  "convert_bitrate_threshold":"9999",
+  "target_bitrate":"256",
+  "max_concurrent":20,
+  "passthrough_sample_rate" : true,
+  "output_flac":true,
+  "itunes_xml":"/mnt/c/Users/Nicholas Kasprak/Music/iTunes/iTunes Music Library.xml",
+  "itunes_root":"/mnt/d/iTunes/Music",
+  "date_cutoff":"2022-03-03"
+}

@@ -1,4 +1,4 @@
-var settings = require("./settings.json");
+var settings = require("./settings_flac.json");
 var exec = require('child_process').exec;
 var fs = require('fs');
 var path = require('path');
@@ -358,13 +358,25 @@ function convert(d, new_metadata, force_lossy, resolve, reject) {
           "-ac",
           "2",
           "-vn",
-          "-ab",
-          settings.target_bitrate + "k",
-          "-acodec",
-          codec,
-          "-ar",
-          "44100"
+          "-sample_fmt",
+          "s16"
         ];
+        if (codec !== "alac" && codec !== "flac") {
+          cmd_arr = cmd_arr.concat([
+          "-ab",
+          settings.target_bitrate + "k"
+          ]);
+        }
+        cmd_arr = cmd_arr.concat([
+          "-acodec",
+          codec
+        ]);
+        if (settings.passthrough_sample_rate !== true) {
+          cmd_arr = cmd_arr.concat([
+            "-ar",
+            "44100"
+          ])
+        }
         if (new_metadata) {
           Object.keys(new_metadata).forEach((key)=> {
             cmd_arr.push("-metadata");
