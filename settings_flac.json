@@ -1,6 +1,6 @@
 {
-  "source_directory": "/mnt/d/iTunes/Music",
-  "target_directory": "/mnt/e/flac_library",
+  "source_directory": "/mnt/d/iTunes/Music/Adams, John",
+  "target_directory": "/mnt/e/flac_library/Adams, John",
   "convert_bitrate_threshold":"9999",
   "target_bitrate":"256",
   "max_concurrent":20,

@@ -1,3 +1,3 @@
-sudo mount -t drvfs H: /mnt/h
-rsync -rv "./playlists/" "/mnt/h/Music"
-rsync -rv "/mnt/e/Phone Music Library/" "/mnt/h/Music"
+sudo mount -t drvfs G: /mnt/g
+#rsync -rv "./playlists/" "/mnt/g/Music"
+rsync -rv --size-only --delete "/mnt/h/Music/" "/mnt/g/Music"

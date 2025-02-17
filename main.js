@@ -179,7 +179,6 @@ function get_bitrate(file) {
       "stream=bit_rate",
       file
     ]);
-    console.log(command);
     exec(command, function(err, out) {
       if (err) {
         console.log("bad command: " + command);
@@ -187,7 +186,6 @@ function get_bitrate(file) {
         return;
       } else {
         var d = JSON.parse(out);
-        console.log(d);
         resolve(d.streams[0].bit_rate);
         return;
       }
@@ -241,10 +239,10 @@ function copy(d, new_metadata, resolve, reject) {
       }
       get_bitrate(d.data.format.filename).then(function(source_br) {
         if (br >= 0.9*settings.target_bitrate*1000  || br >= source_br) {
-          console.log("existing bitrate is fine");
+          //console.log("existing bitrate is fine");
           resolve(d.jobID);
         } else {
-          console.log("existing bitrate too low, proceeding");
+          //console.log("existing bitrate too low, proceeding");
           finish();
         }
       });
@@ -346,9 +344,7 @@ function convert(d, new_metadata, force_lossy, resolve, reject) {
     var tmp = settings.target_directory + "/" + uuid(filename, uuid_namespace) + ext;
     try {
       console.log("Converting " + d.data.format.filename);
-      
       fs.stat(d.data.format.filename, function(err, stats) {
-        console.log(err);
         var cmd_arr = [
           "ffmpeg",
           "-i",
@@ -357,10 +353,24 @@ function convert(d, new_metadata, force_lossy, resolve, reject) {
           "-2",
           "-ac",
           "2",
-          "-vn",
-          "-sample_fmt",
-          "s16"
+          "-vn"
         ];
+        if (d.data.streams[0].sample_fmt) {
+          var fmt = d.data.streams[0].sample_fmt;
+          if (codec === "flac") {
+            fmt = fmt.replace("p","");
+          }
+          cmd_arr.push("-sample_fmt")
+          cmd_arr.push(fmt);
+        }
+        if (d.data.streams[0].sample_rate) {
+          cmd_arr.push("-sample_rate");
+          cmd_arr.push(d.data.streams[0].sample_rate)
+        }
+        if (d.data.streams[0].bits_per_raw_sample) {
+          cmd_arr.push("-bits_per_raw_sample");
+          cmd_arr.push(d.data.streams[0].bits_per_raw_sample)
+        }
         if (codec !== "alac" && codec !== "flac") {
           cmd_arr = cmd_arr.concat([
           "-ab",
@@ -371,12 +381,12 @@ function convert(d, new_metadata, force_lossy, resolve, reject) {
           "-acodec",
           codec
         ]);
-        if (settings.passthrough_sample_rate !== true) {
+        /*if (settings.passthrough_sample_rate !== true) {
           cmd_arr = cmd_arr.concat([
             "-ar",
             "44100"
           ])
-        }
+        }*/
         if (new_metadata) {
           Object.keys(new_metadata).forEach((key)=> {
             cmd_arr.push("-metadata");
@@ -385,7 +395,6 @@ function convert(d, new_metadata, force_lossy, resolve, reject) {
         }
         cmd_arr.push(tmp);
         var command = shell_escape(cmd_arr);
-        console.log(command);
         exec(command, function(err, stdout) {
           if (err) {
             console.log(err);
@@ -461,7 +470,11 @@ function startNewJob() {
       results.forEach((file)=> {
         if (!dest_file_list[file]) {
           if (deleteUnmanaged) {
-            fs.unlinkSync(file);
+            try {
+              fs.unlinkSync(file);
+            } catch (ex) {
+              console.log(ex);
+            }
             console.log("deleted " + file);
           } else {
             console.log("would delete " + file +", use --delete");
